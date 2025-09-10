@@ -1,4 +1,4 @@
-package com.kyata.todolist
+package com.kyata.systemmonitor
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,51 +7,56 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kyata.todolist.ui.tasklist.TaskListScreen
-import com.kyata.todolist.ui.addtask.AddTaskScreen
-import com.kyata.todolist.ui.taskdetail.TaskDetailScreen
+import com.kyata.todolist.ui.DashboardScreen
+import com.kyata.todolist.SystemInfoViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            TodoFocusApp()
+            SystemMonitorApp()
         }
     }
 }
 
 @Composable
-fun TodoFocusApp() {
+fun SystemMonitorApp() {
     val navController = rememberNavController()
+    val systemInfoViewModel: SystemInfoViewModel = viewModel()
+    val state = systemInfoViewModel.state.collectAsState()
 
     NavHost(
         navController = navController,
-        startDestination = "task_list"
+        startDestination = "dashboard"
     ) {
-        composable("task_list") {
-            TaskListScreen(
-                onAddTaskClick = { navController.navigate("add_task") },
-                onTaskClick = { taskId -> navController.navigate("task_detail/$taskId") },
+        composable("dashboard") {
+            DashboardScreen(
+                cpuUsage = state.value.cpuUsage,
+                batteryLevel = state.value.batteryLevel,
+                memoryUsage = state.value.memoryUsage,
+                batteryTemp = state.value.batteryTemp,
+                netDownloadSpeed = state.value.netDownloadSpeed,
+                netUploadSpeed = state.value.netUploadSpeed,
+                onCpuClick = { navController.navigate("cpu_detail") },
+                onBatteryClick = { navController.navigate("battery_detail") },
+                onMemoryClick = { navController.navigate("memory_detail") },
                 onSettingsClick = {}
             )
         }
-        composable("add_task") {
-            AddTaskScreen(
-                onBack = { navController.popBackStack() },
-                onSave = { task ->
-                    // TODO: gọi ViewModel để insert DB
-                    println("Task mới: $task")
-                }
-            )
+
+        composable("cpu_detail") {
+//            CpuDetailScreen(onBack = { navController.popBackStack() })
         }
 
+        composable("battery_detail") {
+//            BatteryDetailScreen(onBack = { navController.popBackStack() })
+        }
 
-        composable("task_detail/{taskId}") { backStackEntry ->
-            val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
-            TaskDetailScreen(
-                taskId = taskId,
-                onBack = { navController.popBackStack() }
-            )
+        composable("memory_detail") {
+//            MemoryDetailScreen(onBack = { navController.popBackStack() })
         }
     }
 }
+
