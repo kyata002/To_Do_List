@@ -11,7 +11,9 @@ import com.kyata.todolist.ui.DashboardScreen
 import com.kyata.todolist.SystemInfoViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
+import com.kyata.todolist.ui.battery.BatteryDetailScreen
 import com.kyata.todolist.ui.CpuDetailScreen
+import com.kyata.todolist.ui.MemoryDetailScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,11 +54,11 @@ fun SystemMonitorApp() {
         }
 
         composable("battery_detail") {
-//            BatteryDetailScreen(onBack = { navController.popBackStack() })
+            BatteryDetailScreen(onBack = { navController.popBackStack() })
         }
 
         composable("memory_detail") {
-//            MemoryDetailScreen(onBack = { navController.popBackStack() })
+            MemoryDetailScreen(onBack = { navController.popBackStack() })
         }
     }
 }

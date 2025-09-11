@@ -66,6 +66,7 @@ dependencies {
 
     // ✅ Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation(libs.androidx.work.runtime.ktx)
 
     // ✅ Optional: Tooling & Debug
     debugImplementation("androidx.compose.ui:ui-tooling")
