@@ -16,12 +16,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyata.todolist.R
+import com.kyata.todolist.ui.animation.AnimationManager
 import kotlin.random.Random
 
 private const val MAX_NETWORK_SPEED_KBPS = 230_000L // 1.84 Tbps
@@ -49,7 +51,7 @@ val SystemTeal = Color(0xFF018786)
 @Composable
 fun DashboardScreen(
     cpuUsage: Float,
-    batteryLevel: Int,
+    batteryLevel: Pair<Int, String>,
     memoryUsage: Int,
     batteryTemp: Float,
     netDownloadSpeed: Long,
@@ -121,63 +123,79 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        StatCard(
-                            title = "CPU Usage",
-                            onClick = onCpuClick,
-                            modifier = Modifier.weight(1f),
-                            accentColor = SystemCyan,
-                            content = {
-                                CpuUsageItem(
-                                    usage = cpuUsage,
-                                    accentColor = SystemCyan
-                                )
-                            }
-                        )
-                        StatCard(
-                            title = "Battery",
-                            value = "$batteryLevel%",
-                            onClick = onBatteryClick,
-                            modifier = Modifier.weight(1f),
-                            accentColor = SystemTeal,
-                            content = {
-                                BatteryUsageItem(
-                                    level = batteryLevel,
-                                    accentColor = SystemTeal
-                                )
-                            }
-                        )
+                        AnimationManager.PulseAnimation {
+                            StatCard(
+                                title = "CPU",
+                                onClick = onCpuClick,
+                                modifier = Modifier.weight(1f),
+                                accentColor = SystemCyan,
+                                content = {
+                                    CpuUsageItem(
+                                        usage = cpuUsage,
+                                        accentColor = SystemCyan
+                                    )
+                                }
+                            )
+                        }
+                        AnimationManager.PulseAnimation {
+                            StatCard(
+                                title = "Memory",
+                                onClick = onMemoryClick,
+                                modifier = Modifier.weight(1f),
+                                accentColor = SystemBlue,
+                                content = {
+                                    MemoryUsageItem(
+                                        usage = memoryUsage,
+                                        accentColor = SystemBlue
+                                    )
+                                }
+                            )
+
+                        }
+
                     }
 
                     // Row 2: Memory và Temperature
-                    Row(
+                    StatCard(
+                        title = "Battery Info",
+                        value = "$batteryLevel% • ${batteryTemp}°C",
+                        onClick = onBatteryClick,
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        StatCard(
-                            title = "Memory",
-                            onClick = onMemoryClick,
-                            modifier = Modifier.weight(1f),
-                            accentColor = SystemBlue,
-                            content = {
-                                MemoryUsageItem(
-                                    usage = memoryUsage,
-                                    accentColor = SystemBlue
-                                )
+                        accentColor = SystemTeal,
+                        content = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    BatteryUsageItem(
+                                        level = batteryLevel.component1(),
+                                        modifier = Modifier.size(94.dp) // chỉnh lại size nhỏ gọn
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    TemperatureUsageItem(
+                                        temperature = batteryTemp,
+                                        modifier = Modifier.size(94.dp) // tương tự để không bị to/cắt
+                                    )
+                                }
                             }
-                        )
-                        StatCard(
-                            title = "Battery Temp",
-                            onClick = onBatteryClick,
-                            modifier = Modifier.weight(1f),
-                            accentColor = Color(0xFFFF6B35),
-                            content = {
-                                TemperatureUsageItem(
-                                    temperature = batteryTemp,
-                                    accentColor = Color(0xFFFF6B35)
-                                )
-                            }
-                        )
-                    }
+                        }
+                    )
+
+
+
 
                     // Row 3: Network
                     Row(
@@ -466,53 +484,128 @@ fun CpuUsageItem(
     }
 }
 
+
 @Composable
 fun BatteryUsageItem(
-    level: Int,
+    level: Int,               // % pin (0..100)
     modifier: Modifier = Modifier,
-    accentColor: Color = SystemTeal
+    backgroundColor: Color = Color.LightGray
 ) {
     val animatedLevel by animateFloatAsState(
         targetValue = level.coerceIn(0, 100).toFloat(),
-        animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 800, easing = LinearOutSlowInEasing),
         label = "batteryAnim"
     )
 
+    // chọn màu theo % pin
+    val progressColor = when {
+        animatedLevel < 50f -> lerp(Color.Red, Color.Yellow, animatedLevel / 50f)
+        else -> lerp(Color.Yellow, Color(0xFF4CAF50), (animatedLevel - 50f) / 50f)
+    }
+
     Box(
-        modifier = modifier.size(100.dp),
+        modifier = modifier
+            .size(120.dp),
         contentAlignment = Alignment.Center
     ) {
-        CircularProgressIndicator(
-            progress = { animatedLevel / 100f },
-            modifier = Modifier.fillMaxSize(),
-            color = accentColor,
-            strokeWidth = 8.dp,
-            trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-        )
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val strokeWidth = 8.dp.toPx()
+            val sweep = (animatedLevel / 100f) * 180f
+            val arcSize = Size(size.width, size.width)
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "${animatedLevel.toInt()}",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = accentColor
-                )
-                Text(
-                    text = "%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier
-                        .padding(bottom = 2.5.dp) // Điều chỉnh nếu cần
-                )
-            }
+            // arc nền
+            drawArc(
+                color = backgroundColor.copy(alpha = 0.2f),
+                startAngle = 180f,
+                sweepAngle = 180f,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                size = arcSize
+            )
 
+            // arc progress
+            drawArc(
+                color = progressColor,
+                startAngle = 180f,
+                sweepAngle = sweep,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                size = arcSize
+            )
         }
+
+        Text(
+            text = "${animatedLevel.toInt()}%",
+            style = MaterialTheme.typography.headlineMedium.copy(fontSize = 20.sp)
+        )
     }
 }
+
+
+@Composable
+fun TemperatureUsageItem(
+    temperature: Float,         // °C
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color.LightGray
+) {
+    // Giới hạn nhiệt độ trong khoảng 20–60°C rồi map sang % (0–100)
+    val clampedTemp = temperature.coerceIn(20f, 60f)
+    val percent = ((clampedTemp - 20f) / 40f) * 100f
+
+    val animatedTemp by animateFloatAsState(
+        targetValue = percent,
+        animationSpec = tween(durationMillis = 800, easing = LinearOutSlowInEasing),
+        label = "tempAnim"
+    )
+
+    // Đổi màu theo nhiệt độ
+    val progressColor = when {
+        temperature < 35f -> lerp(Color(0xFF4CAF50), Color.Yellow, (temperature - 20f) / 15f) // xanh → vàng
+        else -> lerp(Color.Yellow, Color.Red, (temperature - 35f) / 25f)                     // vàng → đỏ
+    }
+
+    Box(
+        modifier = modifier
+            .size(120.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val strokeWidth = 8.dp.toPx()
+            val sweep = (animatedTemp / 100f) * 180f
+            val arcSize = Size(size.width, size.width)
+
+            // arc nền
+            drawArc(
+                color = backgroundColor.copy(alpha = 0.2f),
+                startAngle = 180f,
+                sweepAngle = 180f,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                size = arcSize
+            )
+
+            // arc progress
+            drawArc(
+                color = progressColor,
+                startAngle = 180f,
+                sweepAngle = sweep,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                size = arcSize
+            )
+        }
+
+        Text(
+            text = String.format("%.1f°C", temperature),
+            style = MaterialTheme.typography.headlineMedium.copy(fontSize = 18.sp)
+        )
+    }
+}
+
 
 @Composable
 fun MemoryUsageItem(
@@ -563,50 +656,7 @@ fun MemoryUsageItem(
     }
 }
 
-@Composable
-fun TemperatureUsageItem(
-    temperature: Float,
-    modifier: Modifier = Modifier,
-    accentColor: Color = Color(0xFFFF6B35)
-) {
-    Box(
-        modifier = modifier.size(100.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Biểu đồ nhiệt độ dạng vòng tròn
-        val progress = (temperature.coerceIn(20f, 60f) - 20f) / 40f
 
-        CircularProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxSize(),
-            color = accentColor,
-            strokeWidth = 8.dp,
-            trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-        )
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = String.format("%.1f", temperature),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = accentColor
-                )
-                Text(
-                    text = "°C",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier
-                        .padding(bottom = 2.5.dp) // Điều chỉnh nếu cần
-                )
-            }
-
-        }
-    }
-}
 
 @Composable
 fun DownloadUsageItem(

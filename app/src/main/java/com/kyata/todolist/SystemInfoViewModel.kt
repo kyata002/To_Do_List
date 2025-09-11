@@ -17,7 +17,7 @@ import java.io.RandomAccessFile
 
 data class SystemInfoState(
     val cpuUsage: Float = 0f,       // <-- đổi từ Int sang Float
-    val batteryLevel: Int = 0,
+    var batteryLevel: Pair<Int, String> = 0 to "Unknown",
     val memoryUsage: Int = 0,
     val batteryTemp: Float = 0f,
     val netDownloadSpeed: Long = 0L,
@@ -38,7 +38,7 @@ class SystemInfoViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             while (true) {
                 val cpu = getCpuUsage()
-                val battery = getBatteryLevel()
+                val battery = getBatteryHealthInfo()
                 val mem = getMemoryUsage()
                 val temp = getBatteryTemperature()
                 val (download, upload) = getNetworkSpeed()
@@ -64,6 +64,66 @@ class SystemInfoViewModel(app: Application) : AndroidViewModel(app) {
         val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
         return if (level >= 0 && scale > 0) (level * 100 / scale) else 0
     }
+    fun getBatteryHealth(): String {
+        val context = getApplication<Application>().applicationContext
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val health = intent?.getIntExtra(BatteryManager.EXTRA_HEALTH, -1) ?: -1
+
+        return when (health) {
+            BatteryManager.BATTERY_HEALTH_GOOD -> "Good"
+            BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheat"
+            BatteryManager.BATTERY_HEALTH_DEAD -> "Dead"
+            BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Over Voltage"
+            BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "Failure"
+            BatteryManager.BATTERY_HEALTH_COLD -> "Cold"
+            else -> "Unknown"
+        }
+    }
+    fun getBatteryHealthPercent(): Int {
+        val context = getApplication<Application>().applicationContext
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val health = intent?.getIntExtra(BatteryManager.EXTRA_HEALTH, -1) ?: -1
+
+        return when (health) {
+            BatteryManager.BATTERY_HEALTH_GOOD -> 100
+            BatteryManager.BATTERY_HEALTH_OVERHEAT -> 80
+            BatteryManager.BATTERY_HEALTH_DEAD -> 0
+            BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> 70
+            BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> 50
+            BatteryManager.BATTERY_HEALTH_COLD -> 90
+            else -> 75 // Unknown
+        }
+    }
+
+    fun getBatteryHealthInfo(): Pair<Int, String> {
+        val context = getApplication<Application>().applicationContext
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val health = intent?.getIntExtra(BatteryManager.EXTRA_HEALTH, -1) ?: -1
+
+        val percent = when (health) {
+            BatteryManager.BATTERY_HEALTH_GOOD -> 100
+            BatteryManager.BATTERY_HEALTH_COLD -> 90
+            BatteryManager.BATTERY_HEALTH_OVERHEAT -> 70
+            BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> 65
+            BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> 45
+            BatteryManager.BATTERY_HEALTH_DEAD -> 0
+            else -> 75 // Unknown
+        }
+
+        val healthText = when (health) {
+            BatteryManager.BATTERY_HEALTH_GOOD -> "Good (100%)"
+            BatteryManager.BATTERY_HEALTH_COLD -> "Cold (~90%)"
+            BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheat (~70%)"
+            BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Over Voltage (~65%)"
+            BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "Failure (~45%)"
+            BatteryManager.BATTERY_HEALTH_DEAD -> "Dead (0%)"
+            else -> "Unknown (~75%)"
+        }
+
+        return percent to healthText
+    }
+
+
 
     private fun getBatteryTemperature(): Float {
         val context = getApplication<Application>().applicationContext
