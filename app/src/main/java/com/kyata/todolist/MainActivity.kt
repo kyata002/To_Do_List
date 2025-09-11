@@ -12,12 +12,14 @@ import com.kyata.todolist.SystemInfoViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import com.kyata.todolist.ui.battery.BatteryDetailScreen
-import com.kyata.todolist.ui.CpuDetailScreen
+import com.kyata.todolist.ui.cpu.CpuDetailScreen
 import com.kyata.todolist.ui.MemoryDetailScreen
+import com.kyata.todolist.ui.memory.repository.MemoryWorker
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+            MemoryWorker.schedulePeriodicWork(this)
         setContent {
             SystemMonitorApp()
         }
