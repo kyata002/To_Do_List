@@ -1,57 +1,43 @@
 package com.kyata.todolist.ui.addtask
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.kyata.todolist.data.model.Task
+import com.kyata.todolist.data.model.TaskPriority
+import com.kyata.todolist.ui.compose.ModernDateTimePicker
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
     onBack: () -> Unit,
-    onSave: (Task) -> Unit
+    viewModel: TaskViewModel
 ) {
     var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+    var descriptionState by remember {
+        mutableStateOf(TextFieldValue(text = "- ", selection = TextRange(2)))
+    }
     val context = LocalContext.current
 
     var startTime by remember { mutableStateOf(System.currentTimeMillis()) }
     var endTime by remember { mutableStateOf(System.currentTimeMillis() + 60 * 60 * 1000) }
 
-    val calendar = Calendar.getInstance()
+    var expanded by remember { mutableStateOf(false) }
+    var priority by remember { mutableStateOf(TaskPriority.MEDIUM) }
 
-    fun pickDateTime(onResult: (Long) -> Unit) {
-        val now = Calendar.getInstance()
-        DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                TimePickerDialog(
-                    context,
-                    { _, hour, minute ->
-                        calendar.set(year, month, dayOfMonth, hour, minute, 0)
-                        onResult(calendar.timeInMillis)
-                    },
-                    now.get(Calendar.HOUR_OF_DAY),
-                    now.get(Calendar.MINUTE),
-                    true
-                ).show()
-            },
-            now.get(Calendar.YEAR),
-            now.get(Calendar.MONTH),
-            now.get(Calendar.DAY_OF_MONTH)
-        ).show()
-    }
+    // Trạng thái hiển thị dialog
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Thêm công việc") })
-        }
+        topBar = { TopAppBar(title = { Text("Thêm công việc") }) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -66,49 +52,135 @@ fun AddTaskScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+
             Spacer(Modifier.height(12.dp))
+
             OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
+                value = descriptionState,
+                onValueChange = { newValue ->
+                    val oldValue = descriptionState
+
+                    // Kiểm tra nếu người dùng vừa nhấn Enter
+                    if (newValue.text.length > oldValue.text.length &&
+                        newValue.selection.start > 0 &&
+                        newValue.text[newValue.selection.start - 1] == '\n'
+                    ) {
+                        val insertPos = newValue.selection.start
+                        val updatedText = StringBuilder(newValue.text)
+                            .insert(insertPos, "- ")
+                            .toString()
+
+                        descriptionState = TextFieldValue(
+                            text = updatedText,
+                            selection = TextRange(insertPos + 2) // con trỏ sau "- "
+                        )
+                    } else {
+                        // Xử lý trường hợp xóa hết nội dung
+                        if (newValue.text.isEmpty()) {
+                            descriptionState = TextFieldValue("- ", selection = TextRange(2))
+                        } else {
+                            descriptionState = newValue
+                        }
+                    }
+                },
                 label = { Text("Mô tả") },
                 modifier = Modifier.fillMaxWidth(),
-                maxLines = 3
+                maxLines = 5
             )
+
 
             Spacer(Modifier.height(16.dp))
 
             // Chọn thời gian bắt đầu
             Text("Bắt đầu: ${formatDateTime(startTime)}")
-            Button(
-                onClick = { pickDateTime { startTime = it } },
-                modifier = Modifier.padding(top = 4.dp)
-            ) {
+            Button(onClick = { showStartPicker = true }) {
                 Text("Chọn thời gian bắt đầu")
+            }
+
+            if (showStartPicker) {
+                ModernDateTimePicker(
+                    initialMillis = startTime,
+                    onConfirm = { picked ->
+                        if (picked > System.currentTimeMillis()) {
+                            startTime = picked
+                        } else {
+                            Toast.makeText(context, "Vui lòng chọn thời gian lớn hơn hiện tại", Toast.LENGTH_SHORT).show()
+                        }
+                        showStartPicker = false
+                    },
+                    onDismiss = { showStartPicker = false }
+                )
             }
 
             Spacer(Modifier.height(12.dp))
 
             // Chọn thời gian kết thúc
             Text("Kết thúc: ${formatDateTime(endTime)}")
-            Button(
-                onClick = { pickDateTime { endTime = it } },
-                modifier = Modifier.padding(top = 4.dp)
-            ) {
+            Button(onClick = { showEndPicker = true }) {
                 Text("Chọn thời gian kết thúc")
             }
 
+            if (showEndPicker) {
+                ModernDateTimePicker(
+                    initialMillis = endTime,
+                    onConfirm = { picked ->
+                        if (picked > startTime) {
+                            endTime = picked
+                        } else {
+                            Toast.makeText(context, "Thời gian kết thúc phải sau thời gian bắt đầu", Toast.LENGTH_SHORT).show()
+                        }
+                        showEndPicker = false
+                    },
+                    onDismiss = { showEndPicker = false }
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Dropdown chọn độ ưu tiên
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = priority.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Độ ưu tiên") },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    TaskPriority.values().forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.name) },
+                            onClick = {
+                                priority = option
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
             Spacer(Modifier.height(24.dp))
+
             Button(
                 onClick = {
                     if (title.isNotBlank()) {
                         val task = Task(
                             title = title,
-                            description = description.takeIf { it.isNotBlank() },
+                            description = descriptionState.text.takeIf { it.isNotBlank() },
                             isCompleted = false,
                             startTime = startTime,
-                            endTime = endTime
+                            endTime = endTime,
+                            priority = priority // ✅ thêm độ ưu tiên
                         )
-                        onSave(task)
+                        viewModel.addTask(task)
                         onBack()
                     }
                 },
