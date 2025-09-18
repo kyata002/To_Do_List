@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.kyata.todolist.data.model.Task
 import com.kyata.todolist.data.model.TaskPriority
 import com.kyata.todolist.ui.compose.ModernDateTimePicker
+import com.kyata.todolist.ui.compose.formatDateTime
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -180,7 +181,7 @@ fun AddTaskScreen(
                             endTime = endTime,
                             priority = priority // ✅ thêm độ ưu tiên
                         )
-                        viewModel.addTask(task)
+                        viewModel.addTask(task,context)
                         onBack()
                     }
                 },
@@ -193,7 +194,4 @@ fun AddTaskScreen(
     }
 }
 
-fun formatDateTime(timestamp: Long): String {
-    val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
-}
+

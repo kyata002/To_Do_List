@@ -87,4 +87,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.04.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
+    implementation ("androidx.work:work-runtime-ktx:2.9.1")
 }
