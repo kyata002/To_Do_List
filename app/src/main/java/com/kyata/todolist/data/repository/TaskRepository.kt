@@ -19,6 +19,10 @@ class TaskRepository(private val taskDao: TaskDao) {
     // ✅ chỉ task đã hoàn thành (tab Done)
     fun getCompletedTasks(): Flow<List<Task>> = taskDao.getCompletedTasks()
 
+    // ✅ lấy task trong khoảng thời gian
+    fun getTasksInDateRange(startTime: Long, endTime: Long): Flow<List<Task>> =
+        taskDao.getTasksInDateRange(startTime, endTime)
+
     suspend fun insertTask(task: Task): Long = taskDao.insertTask(task)
 
     suspend fun updateTask(task: Task) = taskDao.updateTask(task)
@@ -28,6 +32,21 @@ class TaskRepository(private val taskDao: TaskDao) {
     suspend fun markOverdue(taskId: Long) = taskDao.markOverdue(taskId)
 
     suspend fun getTaskById(taskId: Long) = taskDao.getTaskById(taskId)
+
+    // ✅ Cập nhật chế độ Hard Core cho task
+    suspend fun updateTaskHardCoreMode(taskId: Long, isHardCore: Boolean) {
+        taskDao.updateTaskHardCoreMode(taskId, isHardCore)
+    }
+
+    // ✅ Cập nhật chế độ Hard Core cho nhiều task trong khoảng thời gian
+    suspend fun updateHardCoreModeForDateRange(startTime: Long, endTime: Long, isHardCore: Boolean) {
+        taskDao.updateHardCoreModeForDateRange(startTime, endTime, isHardCore)
+    }
+
+    // ✅ Kiểm tra xem có task Hard Core nào trong khoảng thời gian không
+    suspend fun hasHardCoreTasksInRange(startTime: Long, endTime: Long): Boolean {
+        return taskDao.hasHardCoreTasksInRange(startTime, endTime)
+    }
 
     suspend fun checkAndMarkOverdueTasks() {
         val currentTime = System.currentTimeMillis()
@@ -39,4 +58,8 @@ class TaskRepository(private val taskDao: TaskDao) {
         }
     }
 
+    // ✅ Đánh dấu task là đã hoàn thành
+    suspend fun markTaskAsCompleted(taskId: Long) {
+        taskDao.markTaskAsCompleted(taskId)
+    }
 }

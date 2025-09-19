@@ -12,7 +12,9 @@ data class Task(
     val startTime: Long,
     val endTime: Long,
     val priority: TaskPriority = TaskPriority.MEDIUM,
-    val isOverdue: Boolean = false
+    val isOverdue: Boolean = false,
+    val isHardCore: Boolean = false
+
 )
 enum class TaskPriority {
     HIGH,

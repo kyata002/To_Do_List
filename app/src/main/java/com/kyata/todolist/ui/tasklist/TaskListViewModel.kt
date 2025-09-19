@@ -1,6 +1,8 @@
 // File: ui/tasklist/TaskListViewModel.kt
 package com.kyata.todolist.ui.tasklist
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kyata.todolist.data.model.Task
@@ -10,9 +12,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Date
 import javax.inject.Inject
 
+@RequiresApi(Build.VERSION_CODES.O)
 class TaskListViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
 ) : ViewModel() {
@@ -32,6 +37,27 @@ class TaskListViewModel @Inject constructor(
     private val _currentTasks = MutableStateFlow<List<Task>>(emptyList())
     val currentTasks: StateFlow<List<Task>> = _currentTasks.asStateFlow()
 
+    private val _todayTasks = MutableStateFlow(emptyList<Task>())
+    val todayTasks: StateFlow<List<Task>> = _todayTasks
+
+
+
+//    @RequiresApi(Build.VERSION_CODES.O)
+//    fun loadTodayTasks() {
+//        viewModelScope.launch {
+//            val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000
+//            val tomorrowStart = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000
+//
+//            taskRepository.getTasksInDateRange(todayStart, tomorrowStart).collect { tasks ->
+//                _todayTasks.value = tasks
+//            }
+//        }
+//    }
+    fun markTaskAsCompleted(taskId: Long) {
+        viewModelScope.launch {
+            taskRepository.markTaskAsCompleted(taskId)
+        }
+    }
     // Comparator để sắp xếp tasks theo priority và thời gian
     private val taskComparator = Comparator<Task> { task1, task2 ->
         // So sánh theo priority (HIGH > MEDIUM > LOW)
@@ -57,6 +83,7 @@ class TaskListViewModel @Inject constructor(
     }
 
     init {
+//        loadTodayTasks()
         loadAllTasks()
         checkOverdueTasks()
     }

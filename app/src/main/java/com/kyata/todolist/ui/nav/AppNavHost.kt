@@ -1,5 +1,7 @@
 package com.kyata.todolist.ui.nav
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -10,6 +12,7 @@ import com.kyata.todolist.ui.addtask.AddTaskViewModel
 import com.kyata.todolist.ui.taskdetail.TaskDetailScreen
 import com.kyata.todolist.ui.tasklist.TaskListViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(
     navController: NavHostController,
