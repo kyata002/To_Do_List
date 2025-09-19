@@ -15,7 +15,7 @@ data class Task(
     val isOverdue: Boolean = false
 )
 enum class TaskPriority {
-    LOW,
+    HIGH,
     MEDIUM,
-    HIGH
+    LOW
 }

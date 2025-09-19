@@ -3,8 +3,7 @@ package com.kyata.todolist
 import android.app.Application
 import androidx.room.Room
 import com.kyata.todolist.data.AppDatabase
-import com.kyata.todolist.data.TaskRepository
-
+import com.kyata.todolist.data.repository.TaskRepository
 class TodoApp : Application() {
     lateinit var repository: TaskRepository
         private set

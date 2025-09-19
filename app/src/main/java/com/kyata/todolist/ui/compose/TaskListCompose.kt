@@ -18,10 +18,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.kyata.todolist.data.model.Task
 import com.kyata.todolist.data.model.TaskPriority
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 
 @Composable
@@ -134,6 +140,78 @@ fun PriorityTag(priority: TaskPriority) {
         onClick = {},
         label = { Text(text, color = color) }
     )
+}
+@Composable
+fun DateHeader(dateLabel: String) {
+    Text(
+        text = dateLabel,
+        modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .fillMaxWidth(),
+        fontSize = 16.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary
+    )
+}
+
+fun groupTasksByDate(tasks: List<Task>): Map<String, List<Task>> {
+    val today = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+    val yesterday = Calendar.getInstance().apply {
+        add(Calendar.DAY_OF_YEAR, -1)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val grouped = mutableMapOf<String, MutableList<Task>>()
+
+    // KHÔNG sắp xếp lại ở đây, giữ nguyên thứ tự đã được sắp xếp từ ViewModel
+    tasks.forEach { task ->
+        val createDate = Date(task.startTime)
+        val createDateCalendar = Calendar.getInstance().apply { time = createDate }
+
+        // Reset time phần để chỉ so sánh ngày
+        createDateCalendar.set(Calendar.HOUR_OF_DAY, 0)
+        createDateCalendar.set(Calendar.MINUTE, 0)
+        createDateCalendar.set(Calendar.SECOND, 0)
+        createDateCalendar.set(Calendar.MILLISECOND, 0)
+
+        val createDateMillis = createDateCalendar.timeInMillis
+
+        val dateLabel = when {
+            createDateMillis == today -> "Hôm nay"
+            createDateMillis == yesterday -> "Hôm qua"
+            else -> dateFormat.format(createDate)
+        }
+
+        if (!grouped.containsKey(dateLabel)) {
+            grouped[dateLabel] = mutableListOf()
+        }
+        grouped[dateLabel]?.add(task)
+    }
+
+    // Sắp xếp thứ tự các nhóm theo thời gian (mới nhất lên đầu)
+    return grouped.toList().sortedByDescending { (label, _) ->
+        when (label) {
+            "Hôm nay" -> today
+            "Hôm qua" -> yesterday
+            else -> {
+                try {
+                    dateFormat.parse(label)?.time ?: 0L
+                } catch (e: Exception) {
+                    0L
+                }
+            }
+        }
+    }.toMap()
 }
 
 fun formatDateTime(timestamp: Long): String {

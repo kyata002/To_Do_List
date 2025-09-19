@@ -1,4 +1,4 @@
-package com.kyata.todolist.data
+package com.kyata.todolist.data.repository
 
 import android.util.Log
 import com.kyata.todolist.data.dao.TaskDao
@@ -26,6 +26,8 @@ class TaskRepository(private val taskDao: TaskDao) {
     suspend fun deleteTask(task: Task) = taskDao.deleteTask(task)
 
     suspend fun markOverdue(taskId: Long) = taskDao.markOverdue(taskId)
+
+    suspend fun getTaskById(taskId: Long) = taskDao.getTaskById(taskId)
 
     suspend fun checkAndMarkOverdueTasks() {
         val currentTime = System.currentTimeMillis()

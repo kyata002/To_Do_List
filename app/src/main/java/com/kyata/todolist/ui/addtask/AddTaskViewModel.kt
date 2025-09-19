@@ -9,16 +9,16 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.kyata.todolist.data.TaskRepository
+import com.kyata.todolist.data.repository.TaskRepository
 import com.kyata.todolist.data.model.Task
-import com.kyata.todolist.ui.tasklist.CheckOverdueWorker
-import com.kyata.todolist.ui.tasklist.MarkOverdueWorker
+import com.kyata.todolist.util.CheckOverdueWorker
+import com.kyata.todolist.util.MarkOverdueWorker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
-class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
+class AddTaskViewModel(private val repository: TaskRepository) : ViewModel() {
 
     val allTasks: Flow<List<Task>> = repository.getAllTasks()
     val activeTasks: Flow<List<Task>> = repository.getActiveTasks()

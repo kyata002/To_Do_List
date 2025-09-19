@@ -5,23 +5,35 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
-import com.kyata.todolist.ui.addtask.TaskViewModel
+import com.kyata.todolist.ui.addtask.AddTaskViewModel
 import com.kyata.todolist.ui.nav.AppNavHost
+import com.kyata.todolist.ui.tasklist.TaskListViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val repository = (application as TodoApp).repository
-        val taskViewModel = TaskViewModel(repository)
+        val addTaskViewModel = AddTaskViewModel(repository)
+        val taskListViewModel = TaskListViewModel(repository)
 
         setContent {
-            TodoFocusApp(taskViewModel)
+            TodoFocusApp(
+                addTaskViewModel = addTaskViewModel,
+                taskListViewModel = taskListViewModel
+            )
         }
     }
 }
 
 @Composable
-fun TodoFocusApp(taskViewModel: TaskViewModel) {
+fun TodoFocusApp(
+    addTaskViewModel: AddTaskViewModel,
+    taskListViewModel: TaskListViewModel
+) {
     val navController = rememberNavController()
-    AppNavHost(navController = navController, taskViewModel = taskViewModel)
+    AppNavHost(
+        navController = navController,
+        taskListViewModel = taskListViewModel,
+        addTaskViewModel = addTaskViewModel
+    )
 }

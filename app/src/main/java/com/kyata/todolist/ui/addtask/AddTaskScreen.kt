@@ -13,13 +13,12 @@ import com.kyata.todolist.data.model.Task
 import com.kyata.todolist.data.model.TaskPriority
 import com.kyata.todolist.ui.compose.ModernDateTimePicker
 import com.kyata.todolist.ui.compose.formatDateTime
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
     onBack: () -> Unit,
-    viewModel: TaskViewModel
+    viewModel: AddTaskViewModel
 ) {
     var title by remember { mutableStateOf("") }
     var descriptionState by remember {

@@ -1,4 +1,4 @@
-package com.kyata.todolist.ui.tasklist
+package com.kyata.todolist.util
 
 import android.content.Context
 import android.util.Log

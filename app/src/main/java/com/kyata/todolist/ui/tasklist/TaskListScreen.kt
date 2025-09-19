@@ -1,7 +1,7 @@
+// File: ui/tasklist/TaskListScreen.kt
 package com.kyata.todolist.ui.tasklist
 
 import android.util.Log
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,44 +13,42 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.kyata.todolist.data.model.Task
-import com.kyata.todolist.ui.addtask.TaskViewModel
+import com.kyata.todolist.ui.compose.DateHeader
 import com.kyata.todolist.ui.compose.TaskItem
-import kotlinx.coroutines.flow.map
+import com.kyata.todolist.ui.compose.groupTasksByDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(
-    viewModel: TaskViewModel,
+    viewModel: TaskListViewModel,
     onAddTaskClick: () -> Unit,
     onTaskClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(1) } // 0=done, 1=active, 2=overdue
 
-    // Chỉ gọi checkOverdueTasks một lần khi màn hình được khởi tạo
     LaunchedEffect(Unit) {
         viewModel.checkOverdueTasks()
     }
 
-    // Sửa lại cách lấy dữ liệu
     val completedTasks by viewModel.completedTasks.collectAsState(initial = emptyList())
     val activeTasks by viewModel.activeTasks.collectAsState(initial = emptyList())
     val overdueTasks by viewModel.overdueTasks.collectAsState(initial = emptyList())
 
-    // Thêm logging để debug
     LaunchedEffect(activeTasks.size, overdueTasks.size) {
         Log.d("TaskListScreen", "Active tasks: ${activeTasks.size}, Overdue tasks: ${overdueTasks.size}")
     }
 
     val tasks = when (selectedTab) {
-        0 -> completedTasks // Tab Done - lấy từ database
-        1 -> activeTasks    // Tab Đang Làm
-        2 -> overdueTasks   // Tab Quá Hạn
+        0 -> completedTasks
+        1 -> activeTasks
+        2 -> overdueTasks
         else -> activeTasks
+    }
+
+    // Nhóm task theo ngày (đã được sắp xếp theo priority)
+    val groupedTasks = remember(tasks) {
+        groupTasksByDate(tasks)
     }
 
     Scaffold(
@@ -119,18 +117,18 @@ fun TaskListScreen(
                     .padding(padding)
                     .fillMaxSize()
             ) {
-                items(tasks) { task ->
-                    TaskItem(
-                        task = task,
-                        onClick = { onTaskClick(task.id.toString()) }
-                    )
+                groupedTasks.forEach { (dateLabel, tasksForDate) ->
+                    item {
+                        DateHeader(dateLabel)
+                    }
+                    items(tasksForDate) { task ->
+                        TaskItem(
+                            task = task,
+                            onClick = { onTaskClick(task.id.toString()) }
+                        )
+                    }
                 }
             }
         }
     }
 }
-
-
-
-
-
